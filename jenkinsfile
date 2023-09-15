@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+        stages {
+            stage ('Install') {
+                steps {
+                    // install required gems
+                    bat 'gradle clean assemble'
+                }
+            }
+            stage ('Scan') {
+                steps {
+                    withSonarQubeEnv(installationName: 'sonarq1') {
+                        bat 'gradle sonarqube'
+                    }
+                }
+            }
+            stage ('Test') {
+                steps {
+                    // run tests with coverage
+                    //bat 'mvn -B -Dmaven.test.failure.ignore verify'
+                    bat 'gradle clean test aggregate'
+
+                }
+            }
+        }
+        post {
+            always {
+                publishHTML (target: [
+                    reportName : 'Serenity',
+                    reportDir:   'target/site/serenity',
+                    reportFiles: 'index.html',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                    ])
+            }
+        }
+}
